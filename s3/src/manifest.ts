@@ -13,6 +13,7 @@ export const manifest = defineManifest<{
       "store encrypted transfer records in AWS S3 or Cloudflare R2",
       "enforce atomic create-only encrypted record writes",
       "run repeatable orphan ciphertext cleanup drills",
+      "persist protected resumable upload receipts with ETag leases",
     ],
     keywords: [
       "secure transfer",

@@ -13,6 +13,8 @@ import {
   type SecureTransferLifecycleStore,
 } from "@absolutejs/secure-transfer";
 
+export { s3ProtectedReceiptStore } from "./receipts";
+
 export type S3SecureTransferStoreOptions = {
   readonly bucket: string;
   readonly client: Pick<S3Client, "send">;

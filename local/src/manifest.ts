@@ -8,6 +8,7 @@ export const manifest = defineManifest<{ id?: string; root?: string }>()({
     intents: [
       "store encrypted transfer records on a local filesystem",
       "run repeatable orphan ciphertext cleanup drills",
+      "persist protected resumable upload receipts with local leases",
     ],
     keywords: [
       "secure transfer",

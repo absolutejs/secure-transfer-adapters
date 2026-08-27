@@ -10,37 +10,37 @@
     },
     "local": {
       "name": "@absolutejs/secure-transfer-local",
-      "version": "0.0.1",
+      "version": "0.1.0",
       "dependencies": {
         "@absolutejs/manifest": "^0.9.0",
         "@sinclair/typebox": "^0.34.0",
       },
       "devDependencies": {
-        "@absolutejs/secure-transfer": "https://registry.npmjs.org/@absolutejs/secure-transfer/-/secure-transfer-0.0.3.tgz",
+        "@absolutejs/secure-transfer": "https://registry.npmjs.org/@absolutejs/secure-transfer/-/secure-transfer-0.1.1.tgz",
         "@types/bun": "1.3.14",
         "prettier": "3.9.0",
         "typescript": "5.9.3",
       },
       "peerDependencies": {
-        "@absolutejs/secure-transfer": ">=0.0.3 <0.1",
+        "@absolutejs/secure-transfer": ">=0.1.1 <0.2",
       },
     },
     "s3": {
       "name": "@absolutejs/secure-transfer-s3",
-      "version": "0.0.1",
+      "version": "0.1.0",
       "dependencies": {
         "@absolutejs/manifest": "^0.9.0",
         "@sinclair/typebox": "^0.34.0",
       },
       "devDependencies": {
-        "@absolutejs/secure-transfer": "https://registry.npmjs.org/@absolutejs/secure-transfer/-/secure-transfer-0.0.3.tgz",
+        "@absolutejs/secure-transfer": "https://registry.npmjs.org/@absolutejs/secure-transfer/-/secure-transfer-0.1.1.tgz",
         "@aws-sdk/client-s3": "3.1095.0",
         "@types/bun": "1.3.14",
         "prettier": "3.9.0",
         "typescript": "5.9.3",
       },
       "peerDependencies": {
-        "@absolutejs/secure-transfer": ">=0.0.3 <0.1",
+        "@absolutejs/secure-transfer": ">=0.1.1 <0.2",
         "@aws-sdk/client-s3": ">=3.700.0 <4",
       },
     },
@@ -48,7 +48,7 @@
   "packages": {
     "@absolutejs/manifest": ["@absolutejs/manifest@0.9.0", "", { "peerDependencies": { "@sinclair/typebox": ">=0.34.0 <0.35.0" }, "bin": { "absolute-manifest": "dist/cli.js" } }, "sha512-naNDdwNoWQgJ3HuFbAu1UcOVR7SGpLBJz/seO8MMX32vrxk6esgzY7OB1CL8YDOegtI/EqQfcvnulnP66A9aGg=="],
 
-    "@absolutejs/secure-transfer": ["@absolutejs/secure-transfer@https://registry.npmjs.org/@absolutejs/secure-transfer/-/secure-transfer-0.0.3.tgz", { "dependencies": { "@absolutejs/manifest": "^0.9.0", "@sinclair/typebox": "^0.34.0" } }, "sha512-4amx4DKeghjP+Agh/gLJIVulP7Mf1TqqtJghRF+835SXaUCXspeypGMxuPMoNz3ToP8jtfLxs747cQQJfJUy8A=="],
+    "@absolutejs/secure-transfer": ["@absolutejs/secure-transfer@https://registry.npmjs.org/@absolutejs/secure-transfer/-/secure-transfer-0.1.1.tgz", { "dependencies": { "@absolutejs/manifest": "^0.9.0", "@sinclair/typebox": "^0.34.0" } }, "sha512-tZ1Lc1dIhadK5nIAoZDHi/c9+yBi55o9p+2oBmo88KaCTOH8iJTj2ZboLaiQofW238QQWJ/C/uzLQGMJXnqLNQ=="],
 
     "@absolutejs/secure-transfer-local": ["@absolutejs/secure-transfer-local@workspace:local"],
 
@@ -120,8 +120,8 @@
 
     "undici-types": ["undici-types@8.3.0", "", {}, "sha512-j375ScV60dom+YkPFIfTLcOiPxkN/buHz5GobjLhixFuANaNs3C9l4GmrWqejgXWJ7BbJcFYpTEUkS1Ge8bpZQ=="],
 
-    "@absolutejs/secure-transfer-local/@absolutejs/secure-transfer": ["@absolutejs/secure-transfer@0.0.3", "", { "dependencies": { "@absolutejs/manifest": "^0.9.0", "@sinclair/typebox": "^0.34.0" } }, "sha512-4amx4DKeghjP+Agh/gLJIVulP7Mf1TqqtJghRF+835SXaUCXspeypGMxuPMoNz3ToP8jtfLxs747cQQJfJUy8A=="],
+    "@absolutejs/secure-transfer-local/@absolutejs/secure-transfer": ["@absolutejs/secure-transfer@0.1.1", "", { "dependencies": { "@absolutejs/manifest": "^0.9.0", "@sinclair/typebox": "^0.34.0" } }, "sha512-tZ1Lc1dIhadK5nIAoZDHi/c9+yBi55o9p+2oBmo88KaCTOH8iJTj2ZboLaiQofW238QQWJ/C/uzLQGMJXnqLNQ=="],
 
-    "@absolutejs/secure-transfer-s3/@absolutejs/secure-transfer": ["@absolutejs/secure-transfer@0.0.3", "", { "dependencies": { "@absolutejs/manifest": "^0.9.0", "@sinclair/typebox": "^0.34.0" } }, "sha512-4amx4DKeghjP+Agh/gLJIVulP7Mf1TqqtJghRF+835SXaUCXspeypGMxuPMoNz3ToP8jtfLxs747cQQJfJUy8A=="],
+    "@absolutejs/secure-transfer-s3/@absolutejs/secure-transfer": ["@absolutejs/secure-transfer@0.1.1", "", { "dependencies": { "@absolutejs/manifest": "^0.9.0", "@sinclair/typebox": "^0.34.0" } }, "sha512-tZ1Lc1dIhadK5nIAoZDHi/c9+yBi55o9p+2oBmo88KaCTOH8iJTj2ZboLaiQofW238QQWJ/C/uzLQGMJXnqLNQ=="],
   }
 }

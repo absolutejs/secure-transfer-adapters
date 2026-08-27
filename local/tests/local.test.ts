@@ -2,7 +2,7 @@ import { afterEach, describe, expect, test } from "bun:test";
 import { mkdtemp, readdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { localSecureTransferStore } from "../src";
+import { localProtectedReceiptStore, localSecureTransferStore } from "../src";
 
 const roots: string[] = [];
 
@@ -104,5 +104,92 @@ describe("local secure-transfer storage", () => {
     expect(
       await store.getRecord({ recordIndex: 0, transferId: "live" }),
     ).toEqual(Uint8Array.of(7));
+  });
+});
+
+describe("local protected receipt storage", () => {
+  test("serializes leases and enforces compare-and-swap versions", async () => {
+    const { root } = await surface();
+    const store = localProtectedReceiptStore({ root });
+    expect(
+      await store.create({
+        expiresAt: 2_000,
+        protectedBytes: Uint8Array.of(7, 8),
+        receiptId: "receipt-one",
+      }),
+    ).toBe("created");
+    const acquired = await store.acquire({
+      leaseExpiresAt: 1_100,
+      leaseId: "agent-a",
+      now: 1_000,
+      receiptId: "receipt-one",
+    });
+    expect(acquired).toMatchObject({ status: "acquired", version: "0" });
+    expect(
+      await store.acquire({
+        leaseExpiresAt: 1_100,
+        leaseId: "agent-b",
+        now: 1_000,
+        receiptId: "receipt-one",
+      }),
+    ).toEqual({ status: "busy" });
+    if (acquired.status !== "acquired") throw new Error("receipt not acquired");
+    const updated = await store.update({
+      expiresAt: 2_000,
+      leaseExpiresAt: 1_200,
+      leaseId: "agent-a",
+      now: 1_001,
+      protectedBytes: Uint8Array.of(9),
+      receiptId: "receipt-one",
+      version: acquired.version,
+    });
+    expect(updated).toEqual({ status: "updated", version: "1" });
+    expect(
+      await store.update({
+        expiresAt: 2_000,
+        leaseExpiresAt: 1_200,
+        leaseId: "agent-a",
+        now: 1_002,
+        protectedBytes: Uint8Array.of(10),
+        receiptId: "receipt-one",
+        version: "0",
+      }),
+    ).toEqual({ status: "conflict" });
+  });
+
+  test("runs cursor-based expired receipt cleanup", async () => {
+    const { root } = await surface();
+    const store = localProtectedReceiptStore({ root });
+    for (const [receiptId, expiresAt] of [
+      ["expired-a", 100],
+      ["expired-b", 200],
+      ["live", 2_000],
+    ] as const)
+      await store.create({
+        expiresAt,
+        protectedBytes: Uint8Array.of(1),
+        receiptId,
+      });
+    let cursor: string | undefined;
+    let removed = 0;
+    let result;
+    do {
+      result = await store.sweepExpiredReceipts({
+        ...(cursor === undefined ? {} : { cursor }),
+        expiresAtOrBefore: 500,
+        maximumReceipts: 1,
+      });
+      cursor = result.cursor;
+      removed += result.removedReceipts;
+    } while (result.truncated);
+    expect(removed).toBe(2);
+    expect(
+      await store.acquire({
+        leaseExpiresAt: 1_100,
+        leaseId: "agent",
+        now: 1_000,
+        receiptId: "live",
+      }),
+    ).toMatchObject({ status: "acquired" });
   });
 });

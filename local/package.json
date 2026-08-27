@@ -1,6 +1,6 @@
 {
   "name": "@absolutejs/secure-transfer-local",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Atomic local-filesystem storage adapter for @absolutejs/secure-transfer.",
   "type": "module",
   "license": "Apache-2.0",
@@ -54,10 +54,10 @@
     "@sinclair/typebox": "^0.34.0"
   },
   "peerDependencies": {
-    "@absolutejs/secure-transfer": ">=0.0.3 <0.1"
+    "@absolutejs/secure-transfer": ">=0.1.1 <0.2"
   },
   "devDependencies": {
-    "@absolutejs/secure-transfer": "https://registry.npmjs.org/@absolutejs/secure-transfer/-/secure-transfer-0.0.3.tgz",
+    "@absolutejs/secure-transfer": "https://registry.npmjs.org/@absolutejs/secure-transfer/-/secure-transfer-0.1.1.tgz",
     "@types/bun": "1.3.14",
     "prettier": "3.9.0",
     "typescript": "5.9.3"

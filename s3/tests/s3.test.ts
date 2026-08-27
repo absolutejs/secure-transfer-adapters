@@ -7,32 +7,49 @@ import {
   PutObjectCommand,
   type S3Client,
 } from "@aws-sdk/client-s3";
-import { s3SecureTransferStore } from "../src";
+import { s3ProtectedReceiptStore, s3SecureTransferStore } from "../src";
 
 type Stored = {
   readonly body: Uint8Array;
+  readonly etag: string;
   readonly metadata: Record<string, string>;
 };
 
 const fakeS3 = () => {
   const objects = new Map<string, Stored>();
   const commands: unknown[] = [];
+  let version = 0;
   const send = async (command: unknown): Promise<unknown> => {
     commands.push(command);
     if (command instanceof PutObjectCommand) {
       const key = command.input.Key!;
-      if (command.input.IfNoneMatch !== "*")
-        throw new Error("conditional creation was not required");
-      if (objects.has(key))
+      const current = objects.get(key);
+      if (command.input.IfNoneMatch === "*" && current !== undefined)
         throw Object.assign(new Error("collision"), {
           $metadata: { httpStatusCode: 412 },
           name: "PreconditionFailed",
         });
+      if (
+        command.input.IfMatch !== undefined &&
+        command.input.IfMatch !== current?.etag
+      )
+        throw Object.assign(new Error("version conflict"), {
+          $metadata: { httpStatusCode: 412 },
+          name: "PreconditionFailed",
+        });
+      if (
+        command.input.IfNoneMatch === undefined &&
+        command.input.IfMatch === undefined
+      )
+        throw new Error("conditional creation or update was not required");
+      version += 1;
+      const etag = `\"etag-${version}\"`;
       objects.set(key, {
         body: new Uint8Array(command.input.Body as Uint8Array),
+        etag,
         metadata: { ...(command.input.Metadata ?? {}) },
       });
-      return {};
+      return { ETag: etag };
     }
     if (command instanceof GetObjectCommand) {
       const stored = objects.get(command.input.Key!);
@@ -43,6 +60,8 @@ const fakeS3 = () => {
         });
       return {
         Body: { transformToByteArray: async () => stored.body.slice() },
+        ETag: stored.etag,
+        Metadata: stored.metadata,
       };
     }
     if (command instanceof HeadObjectCommand) {
@@ -52,7 +71,7 @@ const fakeS3 = () => {
           $metadata: { httpStatusCode: 404 },
           name: "NotFound",
         });
-      return { Metadata: stored.metadata };
+      return { ETag: stored.etag, Metadata: stored.metadata };
     }
     if (command instanceof DeleteObjectCommand) {
       objects.delete(command.input.Key!);
@@ -206,5 +225,104 @@ describe("S3 secure-transfer storage", () => {
     expect(
       await store.getRecord({ recordIndex: 0, transferId: "keep-me" }),
     ).toEqual(Uint8Array.of(9));
+  });
+});
+
+describe("S3 protected receipt storage", () => {
+  test("uses ETag compare-and-swap for leases and updates", async () => {
+    const surface = fakeS3();
+    const store = s3ProtectedReceiptStore({
+      bucket: "ciphertext",
+      client: surface.client,
+    });
+    expect(
+      await store.create({
+        expiresAt: 2_000,
+        protectedBytes: Uint8Array.of(7, 8),
+        receiptId: "receipt-one",
+      }),
+    ).toBe("created");
+    const acquired = await store.acquire({
+      leaseExpiresAt: 1_100,
+      leaseId: "agent-a",
+      now: 1_000,
+      receiptId: "receipt-one",
+    });
+    expect(acquired).toMatchObject({ status: "acquired" });
+    expect(
+      await store.acquire({
+        leaseExpiresAt: 1_100,
+        leaseId: "agent-b",
+        now: 1_000,
+        receiptId: "receipt-one",
+      }),
+    ).toEqual({ status: "busy" });
+    if (acquired.status !== "acquired") throw new Error("receipt not acquired");
+    const updated = await store.update({
+      expiresAt: 2_000,
+      leaseExpiresAt: 1_200,
+      leaseId: "agent-a",
+      now: 1_001,
+      protectedBytes: Uint8Array.of(9),
+      receiptId: "receipt-one",
+      version: acquired.version,
+    });
+    expect(updated.status).toBe("updated");
+    expect(
+      await store.update({
+        expiresAt: 2_000,
+        leaseExpiresAt: 1_200,
+        leaseId: "agent-a",
+        now: 1_002,
+        protectedBytes: Uint8Array.of(10),
+        receiptId: "receipt-one",
+        version: acquired.version,
+      }),
+    ).toEqual({ status: "conflict" });
+    const conditionalUpdates = surface.commands.filter(
+      (command): command is PutObjectCommand =>
+        command instanceof PutObjectCommand &&
+        command.input.IfMatch !== undefined,
+    );
+    expect(conditionalUpdates.length).toBeGreaterThanOrEqual(2);
+  });
+
+  test("runs cursor-based expired receipt cleanup", async () => {
+    const surface = fakeS3();
+    const store = s3ProtectedReceiptStore({
+      bucket: "ciphertext",
+      client: surface.client,
+    });
+    for (const [receiptId, expiresAt] of [
+      ["expired-a", 100],
+      ["expired-b", 200],
+      ["live", 2_000],
+    ] as const)
+      await store.create({
+        expiresAt,
+        protectedBytes: Uint8Array.of(1),
+        receiptId,
+      });
+    let cursor: string | undefined;
+    let removed = 0;
+    let result;
+    do {
+      result = await store.sweepExpiredReceipts({
+        ...(cursor === undefined ? {} : { cursor }),
+        expiresAtOrBefore: 500,
+        maximumReceipts: 1,
+      });
+      cursor = result.cursor;
+      removed += result.removedReceipts;
+    } while (result.truncated);
+    expect(removed).toBe(2);
+    expect(
+      await store.acquire({
+        leaseExpiresAt: 1_100,
+        leaseId: "agent",
+        now: 1_000,
+        receiptId: "live",
+      }),
+    ).toMatchObject({ status: "acquired" });
   });
 });

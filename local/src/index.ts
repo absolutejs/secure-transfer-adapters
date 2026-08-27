@@ -15,6 +15,9 @@ import {
   type SecureTransferLifecycleStore,
 } from "@absolutejs/secure-transfer";
 
+export { localProtectedReceiptStore } from "./receipts";
+export type { LocalProtectedReceiptStoreOptions } from "./receipts";
+
 export type LocalSecureTransferStoreOptions = {
   readonly id?: string;
   /** Private directory controlled by this process. */
